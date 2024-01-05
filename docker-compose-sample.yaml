@@ -1,0 +1,70 @@
+---
+version: "3.9"
+services:
+  flask:
+    build:
+      context: ./Docker/flask
+    container_name: flask
+    volumes:
+      - ./app/:/app
+    restart: unless-stopped
+    stdin_open: true
+    #entrypoint: /bin/bash
+    networks:
+      - api
+      
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - flask
+    #entrypoint: /bin/bash
+    volumes:
+      - ./nginx_config:/etc/nginx/conf.d
+      - ./app/:/app
+    ports:
+      - "5000:443"
+    networks:
+      - api
+
+  celery:
+    build:
+      context: ./Docker/celery
+    container_name: celery
+    depends_on:
+      - redis
+    restart: unless-stopped
+    stdin_open: true
+    networks:
+      - api
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    depends_on:
+      - flask
+    #entrypoint: /bin/bash
+    networks:
+      - api
+
+networks:
+  api:
+    driver: bridge
+
+  -----------------
+DockerFile:
+
+FROM python:3.9.7-slim-buster
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    build-essential # python-dev libssl-dev openssl
+
+COPY ./ .
+
+RUN pip3 install -r requirements.txt
+
+ENV CELERY_BROKER_URL=redis://redis:6379/0
+
+CMD ["celery", "worker", "--loglevel=info"]
