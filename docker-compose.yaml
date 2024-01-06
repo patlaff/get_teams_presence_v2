@@ -1,0 +1,53 @@
+---
+version: "3.9"
+services:
+  flask:
+    build:
+      context: ./app
+      dockerfile: ../Dockerfile
+    container_name: flask-app
+    volumes:
+      - ./app/:/app
+    restart: unless-stopped
+    stdin_open: true
+    #entrypoint: /bin/bash
+    networks:
+      - net
+      
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - flask
+    #entrypoint: /bin/bash
+    volumes:
+      - ./nginx_config:/etc/nginx/conf.d
+      - ./app/:/app
+    ports:
+      - "5000:443"
+    networks:
+      - net
+
+  # celery:
+  #   build:
+  #     context: ./Docker/celery
+  #   container_name: celery
+  #   depends_on:
+  #     - redis
+  #   restart: unless-stopped
+  #   stdin_open: true
+  #   networks:
+  #     - net
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    depends_on:
+      - flask
+    #entrypoint: /bin/bash
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge

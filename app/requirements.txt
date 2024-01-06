@@ -6,5 +6,5 @@ werkzeug>=2
 requests>=2,<3
 identity>=0.3,<0.4
 python-dotenv<0.22
-celery>=5.3.6
+celery[redis]>=5.3.6
 sense-hat>=2.4.0

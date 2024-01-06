@@ -91,7 +91,10 @@ def index():
 
 
 @celery.task()
-def getPresence(token):
+def getPresence():
+    token = auth.get_token_for_user(app_config.SCOPE)
+    if "error" in token:
+        return redirect(url_for("login"))
     api_result = requests.get(
         app_config.ENDPOINT,
         headers={'Authorization': 'Bearer ' + token['access_token']},
@@ -116,11 +119,7 @@ def getPresence(token):
         
 @app.route("/get_presence")
 def get_presence():
-    token = auth.get_token_for_user(app_config.SCOPE)
-    if "error" in token:
-        return redirect(url_for("login"))
-    # Use access token to call downstream api
-    presence = getPresence(token)
+    presence = getPresence()
     return render_template('display.html', result=presence)
 
 
